@@ -1,40 +1,36 @@
 #%%
 import numpy as np 
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
-from Rates import  rate_TBA_Honk, rate_diB_Honk, rate_ETBE_Thy_act
+from scipy.integrate import solve_ivp, odeint
+from Rates import RATE
+from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0
 #%%
-tspan = np.linspace(0, 12600, 1000)
-W = 2 #kg
-# print(np.format_float_scientific(W))
-# intial conditions
-FIB, FEt, Fw, FTBA, FETBE, FDIB, FTRIB, F1B, FIBane = F0 = [F*(1000/3600) for F in  [52.255477, 58.885664, 21.650439, 7.936977, 14.89919, 0, 0 , 20.322345 , 6.7940117]] ## all in ]kmol/h
-Q = 15 #m3/h
-C_IB, C_Et, C_w, C_TBA, C_ETBE, C_DIB, C_TRIB, C_1B, C_IBane = C0 = [(F/Q) for F in F0] # all in kmol/m3 or mol/dm3
-T0, P0, Q0 = [343, 1600, 15] # K, kPa, m3/h
-
-
-#%%
-names = ['Isobutene', 'Ethanol', 'Water', 'TBA', 'ETBE', 'Di-B', 'Tri-B', '1-butene', 'isobutane']
-
-
-
-# %%
-def PBR(W, arr):
+def PBR(V, arr):
     T, P, Q = arr[:3]
     Fls = arr[3:]
-    rETBE = rate_ETBE_Thy_act(T, P, Q, Fls)
-    rTBA = rate_TBA_Honk(T, P, Q, Fls)
-    rdiB = rate_diB_Honk(T, P, Q, Fls)
-    return [0,0,0,-rETBE-rTBA-2*rdiB, -rETBE, -rTBA , rTBA ,rETBE, rdiB , 0 , 0 , 0 ]
-Wspan = np.linspace(0, 60000, 100)
-ans = solve_ivp(PBR, [0, Wspan[-1]], [350, P0, Q0, *F0], dense_output=True).sol(Wspan)[3:]
-for F, n in zip(ans, names):
-    plt.plot(Wspan, F, label = n)
+    r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = [rhob*r for r in RATE(T, P, Q, Fls)
+    ]
+    dT, dP, dQ = 0,0,0
+
+    return [dT, dP, dQ, r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
+
+#%%
+rhob = 610
+Wtot = 20000 #kg
+Vspan = np.linspace(0, Wtot/rhob, 100)
+T0 = 80+273.15
+Pt0, Qt0 = [v['value'] for v in [P0, Q0] ]
+y0 = [T0,Pt0, Qt0, *F0]
+ans = solve_ivp(PBR, [0, Wtot/rhob], y0, dense_output = True).sol(Vspan)
+for n, Fls in zip(fn_ls, ans[3:]):
+    plt.plot(Vspan, Fls, label = n)
 plt.legend(loc = 'best')
 plt.show()
 
 
+# %%
+
+# %%
 # %%
 
 

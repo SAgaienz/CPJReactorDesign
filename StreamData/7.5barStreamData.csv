@@ -1,0 +1,24 @@
+Property,unit,value
+Propylene,mol/mol,7.69E-14
+Propane,mol/mol,1.28E-14
+Isobutane,mol/mol,0.036893809
+Isobutene,mol/mol,0.28376513
+1-butene,mol/mol,0.11035729
+"buta-1,3-diene",mol/mol,0.003833089
+N-butane,mol/mol,0.003215834
+Trans-2-butene,mol/mol,0.000550714
+Cis-2-butene,mol/mol,3.73E-05
+Hydrogen,mol/mol,1.05E-117
+Carbon dioxide,mol/mol,1.38E-36
+Methane,mol/mol,3.56E-112
+Ethane,mol/mol,0
+Carbon monoxide,mol/mol,2.93E-121
+Water,mol/mol,0.1175693
+Ethanol,mol/mol,0.31976931
+2-methyl-2-propanol,mol/mol,0.043100502
+Tert-butyl ethyl ether,mol/mol,0.0809077
+Mass Flow,kg/s,2.710852778
+Molar Flow,mol/s,51.15277778
+Volumetric Flow,m3/s,0.01492175
+Specific Enthalpy,kJ/kg,-489.304
+Pressure,kPa,750
