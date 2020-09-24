@@ -42,3 +42,6 @@ for sn, (fn, v) in CF_dict.items():
     fn_ls.append(fn)
 # %%
 mt0, Ft0, Q0, P0 = streamdf.loc[0], streamdf.loc[1], streamdf.loc[2], streamdf.loc[4]
+
+def init_cond():
+    return mt0['value'], Ft0['value'], Q0['value'], P0['value'] 

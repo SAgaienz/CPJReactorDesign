@@ -22,6 +22,7 @@ T0 = 80+273.15
 Pt0, Qt0 = [v['value'] for v in [P0, Q0] ]
 y0 = [T0,Pt0, Qt0, *F0]
 ans = solve_ivp(PBR, [0, Wtot/rhob], y0, dense_output = True).sol(Vspan)
+
 for n, Fls in zip(fn_ls, ans[3:]):
     plt.plot(Vspan, Fls, label = n)
 plt.legend(loc = 'best')
