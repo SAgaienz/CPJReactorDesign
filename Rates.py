@@ -1,17 +1,35 @@
 import numpy as np 
 from thermo import Chemical, UNIFAC
+from StreamData import CF_dict, fn_ls, sn_ls
+
+###### check (and correct if necessary) impossible molar flows #####
+def check_zero(arr):
+    arr_n = []
+    for i in arr:
+        if i<=0:
+            i = 0
+            arr_n.append(i)
+        else:
+            arr_n.append(i)
+    return arr_n
+
+def fetch_UNIFAC_DG(full_name_list = fn_ls, update =False):
+    UNIFAC_DG = []
+    if update:
+        for name in full_name_list:
+            print(name)
+            a = Chemical(name, 200, 100).UNIFAC_groups
+            UNIFAC_DG.append(a)
+        return UNIFAC_DG
+    else:
+        return [{1: 3, 3: 1}, {1: 2, 7: 1}, {1: 1, 2: 1, 5: 1}, {5: 2}, {1: 2, 2: 2}, {1: 2, 6: 1}, {1: 2, 6: 1}, {16: 1}, {1: 1, 2: 1, 14: 1}, {1: 3, 4: 1, 14: 1}, {1: 4, 4: 1, 25: 1}, {1: 5, 4: 1, 8: 1}, {1: 6, 2: 2, 4: 2, 7: 1}]
+
 ##### convert F to a ######
-def activity(T, P, Q, arr): # takes concentration
-    xIB, xEt, xw, xTBA, xETBE, xDIB, xTRIB, x1B, xIBane = x_ls = [C/sum(arr) for C in arr]
-    names = ['isobutene', 'ethyl alcohol', 'water', 'tert-butanol', 'ethyl tert-butyl ether', '2,4,4-trimethyl-2-pentene', '4,4-dimethyl-2-neopentyl-1-pentene', '1-butene', 'isobutane']
-    UNIFAC_DG = [{1: 2, 7: 1}, {1: 1, 2: 1, 14: 1}, {16: 1}, {1: 3, 4: 1, 14: 1}, {1: 4, 4: 1, 25: 1}, {1: 5, 4: 1, 8: 1}, {1: 6, 2: 2, 4: 2, 7: 1}, {1: 1, 2: 1, 5: 1}, {1: 3, 3: 1}]
-    # for name in names:
-    #     a = Chemical(name, T, P).UNIFAC_groups
-    #     UNIFAC_DG.append(a)
-    # return UNIFAC_DG
+def activity(T, P, Q, arr): # takes Fi (mol/s)
+    x_ls = [C/sum(arr) for C in arr]
+    UNIFAC_DG = fetch_UNIFAC_DG()
     return [g*x for g, x, in zip(UNIFAC(T, x_ls, UNIFAC_DG), x_ls)]
 
-    
 ########### Adsorption Constants ############
 def B_Et(T, TrKr = [358, 1.05e4], dH = -8.3e3, rho_b = 640.26): # 323<T<358
     R = 8.314
@@ -40,12 +58,14 @@ def k_ETBE(T, k3_r = 4.7e-4, Tr = 343, Ea = 81.2e3): #k3_r: dm3/g.s, Ea: kJ/kmol
     k0 = k3_r/np.exp(-Ea/(R*Tr))
     return k0*np.exp(-Ea/(R*T))
 
-def rate_ETBE_Thy(T, P, Q, arr, Beta = 20, F = 85): #returns cat mass-based rate (mmol/s.g)
-        CIB, CEt, _, _, CETBE, _, _, _, _ = arr
-        β = Beta
-        k, Keq = k_ETBE(T), Ka_ETBE(T)
-        α = 1/Keq
-        return k*(CIB - α*(CETBE/CEt) + ((β*(CIB*CEt - α*CETBE))/(CIB + F*(CEt**2) + CETBE)))
+def rate_ETBE_Thy(T, P, Q, arr, Beta = 20, F = 85): # takes F in mol/s, returns cat mass-based rate (mmol/s.g)/ (mol/s.kg_cat)
+    # arr = check_zero(arr)
+    _ ,  C_IB ,  _, _, _, _, _, _,  C_EtOH , _ ,  C_ETBE ,  _, _ = [(F/Q)/1000 for F in arr]
+    ## above line: Fi (mol/s) ---> Ci (mol/dm3) because rate equation uses mol/dm3
+    β = Beta
+    k, Keq = k_ETBE(T), Ka_ETBE(T)
+    α = 1/Keq
+    return k*(C_IB - α*(C_ETBE/C_EtOH) + ((β*(C_IB*C_EtOH - α*C_ETBE))/(C_IB + F*(C_EtOH**2) + C_ETBE))) # returns mol/s.kg_cat
 
 
 ############      TBA (M.Honkela)       #################
@@ -55,16 +75,17 @@ def Ka_TBA(T): # T in K, dimensionless
 def k_TBA(T): #T in K , returns mol/s.kg_cat
     E = 18e3
     R = 8.314
-    Fref = 0.2 
+    Fref = 0.2 * (1000/3600)
     Tref = 343
     return Fref*np.exp(-(E/R)*((T**-1) - (Tref**-1)))
 
-def rate_TBA_Honk(T, P, Q, arr):
-    aIB, _, aw, aTBA, _, _, _, _, _ = activity(T, P, Q, arr)
+def rate_TBA_Honk(T, P, Q, arr): # takes F in mol/s, returns mol/s.kg_cat
+    # arr = check_zero(arr)
+    _ , a_IB , _, _, _, _, _, a_water , _ , a_TBA , _ , _ , _ = activity(T, P, Q, arr)
     k, Ka = k_TBA(T), Ka_TBA(T)
     KwKTBA = 1.5
     K_TBA_K_IB = 7
-    return k*(aw*aIB - Ka*aTBA)/(aIB + K_TBA_K_IB*aTBA + aw*(K_TBA_K_IB*KwKTBA))
+    return -k*(a_water*a_IB - Ka*a_TBA)/(a_IB + K_TBA_K_IB*a_TBA + a_water*(K_TBA_K_IB*KwKTBA))
 
 ############      Di-IB  (M.Honkela)       #################
 
@@ -75,13 +96,13 @@ def k_diB(T): ## T in K,  mol/s.kg_cat
     Tr = 373.15 
     return Fdib*np.exp((-Edib/R)*((T**-1) - (Tr**-1)))
 
-def rate_diB_Honk(T, P, Q, arr):
-    aIB, _, aw, aTBA, _, _, _, _, _ = activity(T, P, Q, arr)
+def rate_diB_Honk(T, P, Q, arr): ## takes F in mol/s, returns mol/s.kg_cat
+    # arr = check_zero(arr)
+    _ , a_IB , _, _, _, _, _, a_water , _ , a_TBA , _ , _ , _ = activity(T, P, Q, arr)
     k = k_diB(T)
     K_TBA_K_IB = 7
     KwKTBA = 1.5
-    return (k*aIB**2)/(aIB + K_TBA_K_IB*aTBA + aw*(K_TBA_K_IB*KwKTBA))**2
-
+    return (k*a_IB**2)/(a_IB + K_TBA_K_IB*a_TBA + a_water*(K_TBA_K_IB*KwKTBA))**2
 
 ############      Tri-IB  (M.Honkela)       #################
 def k_TriiB(T): # T in K, returns mol/s.kg_cat
@@ -91,10 +112,41 @@ def k_TriiB(T): # T in K, returns mol/s.kg_cat
     Tr = 373.15
     return Ftrib*np.exp((-Etrib/R)*((T**-1) - (Tr**-1)))
 
-def rate_TriB_Honk(T, P, Q, arr):
-    aIB, _, aw, aTBA, _, adiB, _, _, _ = activity(T, P, Q, arr)
+def rate_TriB_Honk(T, P, Q, arr): # takes F in mol/s, returns mol/s.kg_cat
+    # arr = check_zero(arr)
+    _ , a_IB , _, _, _, _, _, a_water , _ , a_TBA , _ , a_diB , _ = activity(T, P, Q, arr)
     k = k_TriiB(T) # mol/s.kg_cat
     K_TBA_K_IB = 7
     KwKTBA = 1.5
-    return k*aIB*adiB/((aIB + K_TBA_K_IB*aTBA + aw*(K_TBA_K_IB*KwKTBA))**3)
+    return k*a_IB*a_diB/((a_IB + K_TBA_K_IB*a_TBA + a_water*(K_TBA_K_IB*KwKTBA))**3)
+
+############# OVERALL RATE EQ ################
+
+def RATE(T, P, Q, arr):
+    " T: K" " P: kPa" " Q: m3/s" " arr: F (mol/s)"
+    "T, P, Q, IB_ane', 'IB', '1B', 'B_diene', 'NB_ane', 'trans_B', 'cis_B', 'water', 'EtOH', 'TBA', 'ETBE', 'di_IB', 'tri_IB"
+    "returns mass-based rate (mol/s.kg_cat)"
+    
+    r_ETBE_t = rate_ETBE_Thy(T, P, Q, arr)
+    r_TBA_t = rate_TBA_Honk(T, P, Q, arr)
+    # r_TBA_t = 0
+    r_di_IB_t = rate_diB_Honk(T, P, Q, arr)
+    r_tri_IB_t = rate_TriB_Honk(T, P, Q, arr)
+
+    ### 7 reacting compounds ###
+    r_IB_ane = 0
+    r_IB = -r_ETBE_t - r_TBA_t - 2*r_di_IB_t - r_tri_IB_t
+    r_1B = 0
+    r_B_diene = 0
+    r_NB_ane = 0
+    r_trans_B = 0
+    r_cis_B = 0
+    r_water = -r_TBA_t
+    r_EtOH = -r_ETBE_t
+    r_TBA = r_TBA_t
+    r_ETBE = r_ETBE_t
+    r_di_IB = r_di_IB_t
+    r_tri_IB = r_tri_IB_t
+
+    return [r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
 
