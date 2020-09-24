@@ -3,15 +3,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from Rates import rate_ETBE_Thy, rate_TBA_Honk, rate_diB_Honk, rate_TriB_Honk
-
+from StreamData import C_F
 tspan = np.linspace(0, 12600, 1000)
 W = 2 #kg
-
+print(C_F.Compound.tolist())
+#%%
 
 FIB, FEt, Fw, FTBA, FETBE, FDIB, FTRIB, F1B, FIBane = F0 = [F*(1000/3600) for F in  [52.255477, 58.885664, 21.650439, 7.936977, 14.89919, 0, 0 , 20.322345 , 6.7940117]] ## all in ]kmol/h
 Q = 15 #m3/h
 C_IB, C_Et, C_w, C_TBA, C_ETBE, C_DIB, C_TRIB, C_1B, C_IBane = C0 = [(F/Q) for F in F0] # all in kmol/m3 or mol/dm3
 T0, P0, Q0 = [343, 1600, 15] # K, kPa, m3/h
+
+
+#%%
 def MB(t, Cls):
     rETBE = rate_ETBE_Thy(T0, P0, Q0, Cls)*W
     rTBA = rate_TBA_Honk(T0, P0, Q0, Cls)*W
@@ -19,13 +23,7 @@ def MB(t, Cls):
     rdiB = 0
     return [-rETBE+rTBA-rdiB, -rETBE, -rTBA , +rTBA ,rETBE, rdiB , 0 , 0 , 0 ]
 #%%
-# Cls = solve_ivp(MB, [0, 12600], C0, dense_output=True).sol(tspan)
 names = ['Isobutene' , ' Ethanol' , ' Water' , ' TBA' , ' ETBE' , ' Di-B' , ' Tri-B' , ' 1-butene' , ' isobutane']
-# #%%
-# for C, n in zip(Cls, names):
-#     plt.plot(tspan, C, label = n)
-# plt.legend(loc = 'best')
-# plt.show()
 
 # %%
 def PBR(W, arr):
