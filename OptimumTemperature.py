@@ -71,7 +71,7 @@ def data_collect(n = 7, T0_cond = [T0i, T0f], W_cond = [Wi, Wf]):
         with open('OptimumTempData/' + n + '.csv',"w+") as my_csv:
             csvWriter = csv.writer(my_csv,delimiter=',')
             csvWriter.writerows(ls)
-data_collect(n = 50)
+# data_collect(n = 50)
 #%%
 def import_data():
     ret = []
@@ -95,4 +95,4 @@ def plot_3d():
     # surf4 = ax2.plot_surface(Tspan, Wspan, S_di_IB, cmap=cm.magma, linewidth=0, antialiased=False)
 
     plt.show()
-# plot_3d()
+plot_3d()
