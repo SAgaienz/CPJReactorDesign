@@ -16,9 +16,9 @@ def PBR(V, arr):
 
 #%%
 rhob = 610
-Wtot = 20000 #kg
+Wtot = 30000 #kg
 Vspan = np.linspace(0, Wtot/rhob, 100)
-T0 = 80+273.15
+T0 = 363.15
 Pt0, Qt0 = [v['value'] for v in [P0, Q0] ]
 y0 = [T0,Pt0, Qt0, *F0]
 ans = solve_ivp(PBR, [0, Wtot/rhob], y0, dense_output = True).sol(Vspan)
