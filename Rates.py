@@ -49,14 +49,14 @@ def k_ETBE(T, k3_r = 4.7e-4, Tr = 343, Ea = 81.2e3): #k3_r: dm3/g.s, Ea: kJ/kmol
     return k0*np.exp(-Ea/(R*T))
 
 def rate_ETBE_Thy_act(T, P, Q, arr, Beta = 20, F = 85): #returns cat mass-based rate (mol/s.g) (mol/s.kg_cat)
-        _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, arr)
-        B = 50
-        F = 7
-        D = 8
-        k, Keq = k_ETBE(T), Ka_ETBE(T)
-        k2, Keq2 = 20*k, 20*Keq
-        α = 1/Keq
-        return ((k*a_IB*a_EtOH - (k/Keq)*B*a_ETBE)/(a_EtOH + B*a_ETBE)) + ((k2*a_IB*a_EtOH - (k2/Keq2)*D*a_ETBE)/(a_IB + F*a_EtOH**2 + D*a_ETBE))
+    _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, arr)
+    B = 50
+    F = 7
+    D = 8
+    k, Keq = k_ETBE(T), Ka_ETBE(T)
+    k2, Keq2 = 20*k, 20*Keq
+    α = 1/Keq
+    return ((k*a_IB*a_EtOH - (k/Keq)*B*a_ETBE)/(a_EtOH + B*a_ETBE)) + ((k2*a_IB*a_EtOH - (k2/Keq2)*D*a_ETBE)/(a_IB + F*a_EtOH**2 + D*a_ETBE))
 
 
 ############      TBA (M.Honkela)       #################
@@ -110,6 +110,29 @@ def rate_TriB_Honk(T, P, Q, arr): # takes F in mol/s, returns mol/s.kg_cat
     KwKTBA = 1.5
     return k*a_IB*a_di_IB/((a_IB + K_TBA_K_IB*a_TBA + a_water*(K_TBA_K_IB*KwKTBA))**3)
 
+############ TBA + EtOH --> ETBE + H2O  (M. Umar)   #################
+def k_TBA_ETBE(T): # T in K, returns mol/s.kg_cat
+    "The paper reported kinetics in volumetric basis"
+    "therefore, their bed density was used to convert to a catalyst mass basis"
+    rho_b = 640.26 #kg/m3
+    return np.exp(11.827 - 6429.6/T)*1000/rho_b
+
+def Ka_TBA_ETBE(T): # activity-based chemical equilibrium constant (T in K)
+    A = 1140
+    B = 14580
+    C = 232.9
+    D = 1.087
+    E = 1.114e-3
+    F = 5.538e-7
+    return np.exp(A - (B/T) + C*np.log(T) + D*T - E*T**2 + F*T**3)
+
+def rate_TBA_Umar(T, P, Q, arr): ## takes F in mol/s, returns mol/s.kg_cat
+    _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, arr)
+    k, Keq = k_TBA_ETBE(T), Ka_TBA_ETBE(T)
+    # print(-k*(a_TBA*a_EtOH - (a_ETBE*a_water/Keq)))
+    return -k*(a_TBA*a_EtOH - (a_ETBE*a_water/Keq))
+
+# print(k_TBA_ETBE(350), k_TBA(350))
 ############# OVERALL RATE EQ ################
 
 def RATE(T, P, Q, arr):
@@ -118,24 +141,25 @@ def RATE(T, P, Q, arr):
     "returns mass-based rate (mol/s.kg_cat)"
     
     r_ETBE_t = rate_ETBE_Thy_act(T, P, Q, arr)
-    r_TBA_t = rate_TBA_Honk(T, P, Q, arr)
-    # r_TBA_t = 0
+    r_TBA_1 = rate_TBA_Honk(T, P, Q, arr)
+    r_TBA_2 = rate_TBA_Umar(T, P, Q, arr)
     r_di_IB_t = rate_diB_Honk(T, P, Q, arr)
     r_tri_IB_t = rate_TriB_Honk(T, P, Q, arr)
 
     ### 7 reacting compounds ###
     r_IB_ane = 0
-    r_IB = -r_ETBE_t - r_TBA_t - 2*r_di_IB_t - r_tri_IB_t
+    r_IB = -r_ETBE_t - r_TBA_1 - 2*r_di_IB_t - r_tri_IB_t
     r_1B = 0
     r_B_diene = 0
     r_NB_ane = 0
     r_trans_B = 0
     r_cis_B = 0
-    r_water = -r_TBA_t
-    r_EtOH = -r_ETBE_t
-    r_TBA = r_TBA_t
-    r_ETBE = r_ETBE_t
+    r_water = -r_TBA_1 - r_TBA_2
+    r_EtOH = -r_ETBE_t + r_TBA_2 
+    r_TBA = r_TBA_1 + r_TBA_2 
+    r_ETBE = r_ETBE_t - r_TBA_2
     r_di_IB = r_di_IB_t
     r_tri_IB = r_tri_IB_t
-
+    # print(r_TBA_1, r_TBA_2)
     return [r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
+

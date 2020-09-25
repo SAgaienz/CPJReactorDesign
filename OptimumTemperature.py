@@ -1,12 +1,12 @@
 #%%
 import numpy as np 
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp, odeint
+from scipy.integrate import solve_ivp
 from Rates import RATE
 from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0
-from matplotlib import cm, tri
-from mayavi import mlab
+from matplotlib import cm
 import csv
+from pandas import read_csv
 
 #%%
 def OptiFunc(T0, Wtot = 20000):
@@ -39,7 +39,6 @@ def OptiFunc(T0, Wtot = 20000):
     _, _, _, _, F_IB, _, _, _, _, _, F_water, F_EtOH, F_TBA, F_ETBE, F_di_IB, F_tri_IB = solve_ivp(PBR, [0, Wtot/rhob], y0)['y']
     return selectivity([F_IB, F_water, F_EtOH, F_TBA, F_ETBE, F_di_IB, F_tri_IB])
 
-
 # %%
 n = 7
 T0i, T0f = 40+273.15, 100+273.15
@@ -71,17 +70,15 @@ def data_collect(n = 7, T0_cond = [T0i, T0f], W_cond = [Wi, Wf]):
         with open('OptimumTempData/' + n + '.csv',"w+") as my_csv:
             csvWriter = csv.writer(my_csv,delimiter=',')
             csvWriter.writerows(ls)
-# data_collect(n = 50)
+# data_collect(n = 25)
 #%%
 def import_data():
     ret = []
     for n in ['T', 'W', 'x', 'S_ETBE', 'S_TBA', 'S_di_IB', 'S_tri_IB']:
-        with open('OptimumTempData/' + n + '.csv', "r") as my_csv:
-            reader = csv.reader(my_csv, quoting=csv.QUOTE_NONNUMERIC)
-            ret.append(np.array(list(reader)))
+        df = read_csv('OptimumTempData/' + n + '.csv').values.tolist()
+        ret.append(np.array(df))
     return ret
 Tspan, Wspan, x, S_ETBE, S_TBA, S_di_IB, S_tri_IB = import_data()
-
 #%%
 def plot_3d():
     fig = plt.figure()
