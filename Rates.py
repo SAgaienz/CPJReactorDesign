@@ -132,7 +132,6 @@ def Ka_TBA_ETBE(T): # activity-based chemical equilibrium constant (T in K)
 def rate_TBA_Umar(T, P, Q, arr): ## takes F in mol/s, returns mol/s.kg_cat
     _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, arr)
     k, Keq = k_TBA_ETBE(T), Ka_TBA_ETBE(T)
-    # print(-k*(a_TBA*a_EtOH - (a_ETBE*a_water/Keq)))
     return -k*(a_TBA*a_EtOH - (a_ETBE*a_water/Keq))
 
 # print(k_TBA_ETBE(350), k_TBA(350))

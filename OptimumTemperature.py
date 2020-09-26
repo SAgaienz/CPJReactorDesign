@@ -3,10 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from Rates import RATE
-from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0
+from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0, fnr_ls, snr_ls
 from matplotlib import cm
 import csv
-from pandas import read_csv
+from pandas import read_csv, DataFrame
+from scipy.interpolate import interp1d
 
 #%%
 def OptiFunc(T0, Wtot = 20000):
@@ -92,4 +93,56 @@ def plot_3d():
     # surf4 = ax2.plot_surface(Tspan, Wspan, S_di_IB, cmap=cm.magma, linewidth=0, antialiased=False)
 
     plt.show()
-plot_3d()
+# plot_3d()
+
+##########################
+#%%
+def Equilibrium_Conditions(T, P, Q):
+    def PBR(V, arr):
+        T, P, Q = arr[:3]
+        Fls = arr[3:]
+        r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = [rhob*r for r in RATE(T, P, Q, Fls)]
+        # dT = EB_ada(T, P, Q, Fls)
+        dT = 0
+        dP, dQ = 0,0
+
+        return [dT, dP, dQ, r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
+
+    #%%
+    rhob = 610
+    Wtot = 1600000 #kg0
+    # T0 = 80+273.15
+    # Pt0, Qt0 = [v['value'] for v in [P0, Q0]]
+    y0 = [T,P, Q, *F0]
+    ans = solve_ivp(PBR, [0, Wtot/rhob], y0)['y']
+        # ans = ans.T
+    return ans.T[-1]
+
+def EQ_func(Tspan, P, Q):
+    Fe_span = np.array([Equilibrium_Conditions(T, 1600, 14/3600) for T in Tspan]).T[3:]
+    return Fe_span
+# %%
+def EQ_data_collect(Tspan, P, Q):
+    Fe_vals = EQ_func(Tspan2, P, Q)
+
+    df = DataFrame([Tspan2, *Fe_vals]).T
+    df.columns = ['T', *sn_ls]
+    df.to_csv('OptimumTempData/Equilibrium_data_vs_T.csv', index = False)
+Tspan2 = np.linspace(30+273.15, 373.15, 15)
+# EQ_data_collect(Tspan2, 1600, 15/3600)
+# %%
+df = read_csv('OptimumTempData/Equilibrium_data_vs_T.csv')
+
+interp_Fe_T = interp1d(df['ETBE'], df['T'])
+max_ETBE = max(df['ETBE'])
+T_opt = interp_Fe_T(max_ETBE)
+
+cols = cm.rainbow(np.linspace(0, 1, len(snr_ls)))
+for n, l, col in zip(snr_ls, fnr_ls, cols):
+    plt.plot(df['T'], df[n], label = l , color = col)
+plt.plot([T_opt, T_opt], [0, max_ETBE], label = 'Optimum Temp. = ' + str(T_opt) + 'K', color = 'r')
+plt.plot([min(df['T']), T_opt], [max_ETBE, max_ETBE], label = 'Max. Equil. ETBE = ' + str(max_ETBE) + ' mol/s', color = 'r', ls = '--')
+plt.legend(loc = 'best')
+plt.show()
+
+# %%
