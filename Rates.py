@@ -58,9 +58,18 @@ def rate_ETBE_Thy_act(T, P, Q, arr, Beta = 20, F = 85): #returns cat mass-based 
     α = 1/Keq
     return ((k*a_IB*a_EtOH - (k/Keq)*B*a_ETBE)/(a_EtOH + B*a_ETBE)) + ((k2*a_IB*a_EtOH - (k2/Keq2)*D*a_ETBE)/(a_IB + F*a_EtOH**2 + D*a_ETBE))
 
+def rate_ETBE_Thy_conc(T, P, Q, Fls, Beta = 20, F = 85): #returns cat mass-based rate (mmol/s.g or mol/s.kg_cat)
+    _ , C_IB , _ , _, _, _, _ , C_water , C_EtOH , C_TBA , C_ETBE , C_di_IB , _ = [(F/Q)/1000 for F in Fls] # C in mol/dm3 as per rate eq
+    k, Keq = k_ETBE(T), Ka_ETBE(T)
+    α = 1/Keq
+    return k*(C_IB - (α*C_ETBE/C_EtOH) + Beta*(C_IB*C_EtOH - α*C_ETBE)/(C_IB + F*C_EtOH**2 + C_ETBE))
+
+# use these to change the ETBE kinetic Model interchangeably
+rate_ETBE_Thy = rate_ETBE_Thy_conc
+rate_ETBE_Thy = rate_ETBE_Thy_act 
 
 ############      TBA (M.Honkela)       #################
-def Ka_TBA(T): # T in K, dimensionless
+def Ka_TBA(T): # T in K, returns dimensionless
     return np.exp((-3111.9/T) + 7.6391)
 
 def k_TBA(T): #T in K , returns mol/s.kg_cat
@@ -139,7 +148,7 @@ def RATE(T, P, Q, arr):
     "T, P, Q, IB_ane', 'IB', '1B', 'B_diene', 'NB_ane', 'trans_B', 'cis_B', 'water', 'EtOH', 'TBA', 'ETBE', 'di_IB', 'tri_IB"
     "returns mass-based rate (mol/s.kg_cat)"
     
-    r_ETBE_t = rate_ETBE_Thy_act(T, P, Q, arr)
+    r_ETBE_t = rate_ETBE_Thy(T, P, Q, arr)
     r_TBA_1 = rate_TBA_Honk(T, P, Q, arr)
     r_TBA_2 = rate_TBA_Umar(T, P, Q, arr)
     r_di_IB_t = rate_diB_Honk(T, P, Q, arr)
@@ -164,7 +173,7 @@ def RATE(T, P, Q, arr):
     return [r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
 
 def EB_rates(T, P, Q, arr):
-    r_ETBE_t = rate_ETBE_Thy_act(T, P, Q, arr)
+    r_ETBE_t = rate_ETBE_Thy(T, P, Q, arr)
     r_TBA_1 = rate_TBA_Honk(T, P, Q, arr)
     r_TBA_2 = rate_TBA_Umar(T, P, Q, arr)
     r_di_IB_t = rate_diB_Honk(T, P, Q, arr)

@@ -3,12 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 from Rates import RATE
-from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0, fnr_ls, snr_ls
+from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0, fnr_ls, snr_ls, Q0
 from matplotlib import cm
 import csv
 from pandas import read_csv, DataFrame
 from scipy.interpolate import interp1d
 
+Qt0 = Q0['value']
 #%%
 def OptiFunc(T0, Wtot = 20000):
     def PBR(V, arr):
@@ -98,7 +99,6 @@ def plot_3d():
 ##########################
 #%%
 def Equilibrium_Conditions(T, P, Q):
-    print(T)
     def PBR(V, arr):
         T, P, Q = arr[:3]
         Fls = arr[3:]
@@ -120,7 +120,12 @@ def Equilibrium_Conditions(T, P, Q):
     return ans.T[-1]
 
 def EQ_func(Tspan, P, Q):
-    Fe_span = np.array([Equilibrium_Conditions(T, 1600, 14/3600) for T in Tspan]).T[3:]
+    ret = []
+    for i, T in enumerate(Tspan):
+        print('run ' + str(i+1) + '/' + str(len(Tspan)) + ' | T = ' + str(T))
+        ret.append(Equilibrium_Conditions(T, 1600, 14/3600))
+    Fe_span = np.array(ret).T[3:]
+    # Fe_span = np.array([Equilibrium_Conditions(T, 1600, 14/3600) for T in Tspan]).T[3:]
     return Fe_span
 # %%
 def EQ_data_collect(Tspan, P, Q):
@@ -129,8 +134,8 @@ def EQ_data_collect(Tspan, P, Q):
     df = DataFrame([Tspan2, *Fe_vals]).T
     df.columns = ['T', *sn_ls]
     df.to_csv('OptimumTempData/Equilibrium_data_vs_T.csv', index = False)
-Tspan2 = np.linspace(30+273.15, 373.15, 30)
-# EQ_data_collect(Tspan2, 1600, 15/3600)
+Tspan2 = np.linspace(30+273.15, 373.15, 101)
+# EQ_data_collect(Tspan2, 1600, Qt0)
 # %%
 df = read_csv('OptimumTempData/Equilibrium_data_vs_T.csv')
 

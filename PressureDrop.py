@@ -1,7 +1,7 @@
 #%%
 import numpy as np 
 from thermo import Chemical, phase_change
-from StreamData import sn_ls, fn_ls, P0, F0, P_min_120C
+from StreamData import sn_ls, fn_ls, P0, F0, P_min_120C, Q0
 import matplotlib.pyplot as plt
 
 e_cat = 60.2216e-2
@@ -36,7 +36,7 @@ def MM(f_ls = fn_ls, s_ls = sn_ls, update = False):
         return [58.124, 56.10632, 56.10632, 54.09044, 58.124, 56.10632, 56.10632, 18.01528, 46.06844, 74.1216, 102.17476, 112.21264, 168.31896]
 
 def Mass_Flow(Fls):
-    m_ls = [MM_i*F_i for MM_i, F_i in zip(MM(), Fls)]
+    m_ls = [MM_i*F_i/1000 for MM_i, F_i in zip(MM(), Fls)] ## g/mol * mol/s * 1kg/1000g --> kg/s
     return m_ls
 
 def rho_m(T, P, Q, Fls):
@@ -45,20 +45,20 @@ def rho_m(T, P, Q, Fls):
     mf_ls = [m_i/(sum(m_ls)) for m_i in m_ls]
     a_ls = []
     for mf_i, rho_i in zip(mf_ls, rho_ls):
-        # print(mf_i, rho_i)
         a_ls.append(mf_i/rho_i)
     rho_m = sum(a_ls)**-1
     return rho_m
 
+def reactor_length_dia(Vtot, LD):
+    D = (Vtot*4/(np.pi*LD))**(1/3)
+    L = LD*D
+    return [L, D]
 
-def Ergun(T, P, Q, Fls, LD, L): # K, kPa, m3/s, mol/s, [-], m
+def Ergun(T, P, Q, Fls, L, LD): # K, kPa, m3/s, mol/s, [-], m
     rho = rho_m(T, P, Q, Fls) # kg/m3
     mu = mu_m_simple(T, P, Q, Fls) # Pa.s
-    D  = L*LD**-1 # m
-    Ac = (np.pi*D**2)/4
+    D  = L/LD # m
+    Ac = (np.pi*D**2)/4 # m2
     G = sum(Mass_Flow(Fls))/Ac # kg/s.m2
     e = e_cat
-    return (-G/(rho*dp*Ac))*((1-e)/(e**3))*((150*mu*(1-e)/dp) + 1.75*G)/1000 # kPa/m3
-
-
-# print(rho_m(350, 2100, 0.005, F0))
+    return (-G/(rho*dp))*((1-e)/(e**3))*((150*mu*(1-e)/dp) + 1.75*G)/1000 # kPa/m3

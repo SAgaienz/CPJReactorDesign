@@ -4,6 +4,9 @@ from scipy.optimize import curve_fit, fsolve
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 from ipywidgets import interact
+from thermo import UNIFAC, Chemical
+
+
 conc = {'t': [0, 450, 850, 1256, 1664, 1969, 2343, 2751, 3159, 3600, 4381, 5026, 5875, 6928] , 
     'IB':  [1.85,1.519, 1.25, 1, 0.835, 0.675, 0.55, 0.47, 0.4, 0.345, 0.325, 0.325, 0.325, 0.325], 
     'EtOH': [1.8, 1.425, 1.175, 0.98, 0.79, 0.635, 0.5, 0.435, 0.350, 0.29, 0.275, 0.275, 0.275, 0.275], 
@@ -53,7 +56,7 @@ def Verifunc(β = 20, F = 85, W = 1):
     plt.plot(tspan, ans[1])
     plt.plot(tspan, ans[2])
     plt.show()
-Verifunc()
+# Verifunc()
 #%%
 ########## T approximate dependence of beta and F ##########
 # IB, EtOH, ETBE
@@ -100,9 +103,44 @@ def solver(s):
         return ans['t'], Xspan
     Xe = TAp(T, Z1, Z2)[1][-1]
     return [Xe - Xer, Xe - Xer]
-print(fsolve(solver, x0 = [10000,20000]))
+# print(fsolve(solver, x0 = [10000,20000]))
+
 
 #%%
+DG = [{1: 2, 7: 1}, {1: 1, 2: 1, 14: 1}, {1: 4, 4: 1, 25: 1}]
+def activity(Cls):
+    x_ls = [C/sum(Cls) for C in Cls]
+    a_ls = [g*x for g, x, in zip(UNIFAC(343, x_ls, DG), x_ls)]
+    return a_ls
 
+#%%
+def curveFitting(tspan, B, F, D):
+    T = 343
+    ls = []
+    for t in tspan:
+        def Ka_ETBE(T, Ka_r = 16.5, T_r =  343, dH = -44.3e3): # dH: kJ/kmol
+            R = 8.314
+            return Ka_r*np.exp((-dH/R)*((T**-1)- (T_r**-1)))
+
+        def k_ETBE(T, k3_r = 4.7e-4, Tr = 343, Ea = 81.2e3): #k3_r: dm3/g.s, Ea: kJ/kmol
+            R = 8.314
+            k0 = k3_r/np.exp(-Ea/(R*Tr))
+            return k0*np.exp(-Ea/(R*T))
+                
+        def Batch(t, var):
+            # C_IB, C_EtOH, C_ETBE = var
+            a_IB, a_EtOH, a_ETBE = activity(var)
+            k, Keq = k_ETBE(T), Ka_ETBE(T)
+            k2, Keq2 = 20*k, 20*Keq
+            α = 1/Keq
+            return ((k*a_IB*a_EtOH - (k/Keq)*B*a_ETBE)/(a_EtOH + B*a_ETBE)) + ((k2*a_IB*a_EtOH - (k2/Keq2)*D*a_ETBE)/(a_IB + F*a_EtOH**2 + D*a_ETBE))
+
+        Cfs = solve_ivp(Batch, [0, t], y0 = [conc['IB'][0], conc['EtOH'][0], 0])['y'].T[-1]
+        ls.append(Cfs.tolist())
+
+    return np.reshape(ls, (3, len(tspan)))
+
+curveFitting([1200, 500], B = 50, F = 7, D = 8)
+# curve_fit(curveFitting, conc['t'], [conc['IB'], conc['EtOH'], conc['ETBE']], p0 = [50, 7, 8])
 
 # %%
