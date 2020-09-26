@@ -17,8 +17,11 @@ def fetch_UNIFAC_DG(full_name_list = fn_ls, update =False):
 def activity(T, P, Q, arr): # takes Fi (mol/s)
     x_ls = [C/sum(arr) for C in arr]
     UNIFAC_DG = fetch_UNIFAC_DG()
-    return [g*x for g, x, in zip(UNIFAC(T, x_ls, UNIFAC_DG), x_ls)]
-
+    a_ls = [g*x for g, x, in zip(UNIFAC(T, x_ls, UNIFAC_DG), x_ls)]
+    # print(len(a_ls))
+    # print(a_ls)
+    # print(T)
+    return a_ls
 
 ########### Adsorption Constants ############
 def B_Et(T, TrKr = [358, 1.05e4], dH = -8.3e3, rho_b = 640.26): # 323<T<358
@@ -161,5 +164,13 @@ def RATE(T, P, Q, arr):
     r_di_IB = r_di_IB_t
     r_tri_IB = r_tri_IB_t
     # print(r_TBA_1, r_TBA_2)
+
     return [r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
 
+def EB_rates(T, P, Q, arr):
+    r_ETBE_t = rate_ETBE_Thy_act(T, P, Q, arr)
+    r_TBA_1 = rate_TBA_Honk(T, P, Q, arr)
+    r_TBA_2 = rate_TBA_Umar(T, P, Q, arr)
+    r_di_IB_t = rate_diB_Honk(T, P, Q, arr)
+    r_tri_IB_t = rate_TriB_Honk(T, P, Q, arr)
+    return [r_ETBE_t, r_TBA_1, r_di_IB_t, r_tri_IB_t,  r_TBA_2]

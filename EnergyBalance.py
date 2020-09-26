@@ -3,8 +3,7 @@ import numpy as np
 from thermo import Chemical
 from StreamData import sn_ls, fn_ls, P0
 import matplotlib.pyplot as plt
-P0 =  P0['value']
-T0 = 80+273.15
+from Rates import EB_rates , rate_ETBE_Thy_act, rate_TBA_Honk, rate_TBA_Umar, rate_diB_Honk, rate_TriB_Honk
 #%%
 def Cpi(T, P, f_ls = fn_ls, s_ls = sn_ls): ## takes T in K, P in kPa, returns J/mol/K
     P = P*1000
@@ -38,18 +37,32 @@ def dHrx(T, P): ## takes T in K, P in kPa, returns J/mol rx
     dHrx3_0 = Hf_ls[11] - 2*Hf_ls[1] #J/mol
     dHrx4_0 = -192.87e3 - Hf_ls[11] - Hf_ls[1] #J/mol
     dHrx5_0 = -316.5e3 + Hf_ls[7] - Hf_ls[9] - Hf_ls[8] #J/mol
-    T0 = 25 + 273.15
+    Tr = 25 + 273.15
     dHrx1 = dHrx1_0 +  dCprx_ls[0]*(T - Tr)
     dHrx2 = dHrx2_0 +  dCprx_ls[1]*(T - Tr)
     dHrx3 = dHrx3_0 +  dCprx_ls[2]*(T - Tr)
     dHrx4 = dHrx4_0 +  dCprx_ls[3]*(T - Tr)
     dHrx5 = dHrx5_0 +  dCprx_ls[4]*(T - Tr)
-
+    print(dHrx1, dHrx2, dHrx3, dHrx4, dHrx5)
     return [dHrx1, dHrx2, dHrx3, dHrx4, dHrx5]  
 
-dHrx(350, 1600)
+def EB_ada(T, P, Q, arr):
+    # r_ETBE_t, r_TBA_1, r_di_IB_t, r_tri_IB_t,  r_TBA_2 = EB_rates(T, P, Q, arr)
+    
+    r_ETBE_t = rate_ETBE_Thy_act(T, P, Q, arr)
+    r_TBA_1 = rate_TBA_Honk(T, P, Q, arr)
+    r_TBA_2 = rate_TBA_Umar(T, P, Q, arr)
+    r_di_IB_t = rate_diB_Honk(T, P, Q, arr)
+    r_tri_IB_t = rate_TriB_Honk(T, P, Q, arr)
+
+    dHrx_ls = dHrx(T, P)
+    Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 = [r*dH for r, dH in zip([r_ETBE_t, -r_TBA_1, r_di_IB_t/2, r_tri_IB_t,  -r_TBA_2], dHrx_ls)]
+    Cp_ls = Cpi(T, P)
+    sum_FiCpi = sum([Fi*Cpi for Fi, Cpi in zip(arr, Cp_ls)])
+
+    return (0 - Hrx1 - Hrx2 - Hrx3 - Hrx4 - Hrx5)/sum_FiCpi
 # %%
 
-
+# print(EB_ada(350, 1600.0, 0.004344139, [1.8872208, 14.5153746, 5.6450819, 0.1960731, 0.1644988, 0.281706, 0.001908, 6.0139963, 16.3570885, 2.2047104, 4.1386536, 0.0, 0.0]))
 
 # %%
