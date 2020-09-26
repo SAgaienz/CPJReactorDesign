@@ -2,7 +2,6 @@
 import numpy as np 
 from thermo import Chemical
 from StreamData import sn_ls, fn_ls, P0
-import matplotlib.pyplot as plt
 from Rates import EB_rates , rate_ETBE_Thy_act, rate_TBA_Honk, rate_TBA_Umar, rate_diB_Honk, rate_TriB_Honk
 #%%
 def Cpi(T, P, f_ls = fn_ls, s_ls = sn_ls): ## takes T in K, P in kPa, returns J/mol/K
@@ -20,7 +19,7 @@ def Hf(T, P, f_ls = fn_ls, s_ls = sn_ls, update =False): ## takes T in K, P in k
 
 #%%
 def dCprx(T, P):
-    _e, Cp_IB, _, _, _, _, _, Cp_water, Cp_EtOH, Cp_TBA, Cp_ETBE, Cp_di_IB, Cp_tri_IB = Cp_ls = Cpi(T, P)
+    _e, Cp_IB, _, _, _, _, _, Cp_water, Cp_EtOH, Cp_TBA, Cp_ETBE, Cp_di_IB, Cp_tri_IB  = Cpi(T, P)
     dCprx1 = Cp_ETBE - Cp_EtOH - Cp_IB
     dCprx2 = Cp_IB + Cp_water - Cp_TBA
     dCprx3 = Cp_di_IB - 2*Cp_IB
@@ -57,12 +56,10 @@ def EB_ada(T, P, Q, arr):
     Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 = [r*dH for r, dH in zip([r_ETBE_t, -r_TBA_1, r_di_IB_t/2, r_tri_IB_t,  -r_TBA_2], dHrx_ls)]
     Cp_ls = Cpi(T, P)
     sum_FiCpi = sum([Fi*Cpi for Fi, Cpi in zip(arr, Cp_ls)])
-    print('-------------')
-    print(sum([Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 ]))
-    print(sum_FiCpi)
+    # print('-------------')
+    # print([Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 ])
+    # print(sum_FiCpi)
     return (0 - Hrx1 - Hrx2 - Hrx3 - Hrx4 - Hrx5)/sum_FiCpi
 # %%
 
-def phase_checker(Tspan, Pspan):
-    return [Cpi(T, P) for T, P in zip(Tspan, Pspan)]
 # %%

@@ -1,7 +1,7 @@
 #%%
 from pandas import read_csv
 import numpy as np
-
+from thermo import Chemical
 # data_dir = 'StreamData/7.5barStreamData.csv'
 data_dir = 'StreamData/16barStreamData.csv'
 
@@ -48,6 +48,24 @@ def init_cond():
 
 def reacted_filter(ls):
     return [ls[1], *ls[7:13]]
+
+### determine Pmin ###
+def phase_check(T, P, f_ls = fn_ls, s_ls = sn_ls):
+    P = P*1e3
+    P_ls = [Chemical(f, T, P).phase for f in fn_ls] 
+    return P_ls
+def DeterminPmin(Tmax = 393.15, Ps = 2836.325, n = 1):
+    a = True
+    Pmin = Ps
+    while a:
+        n_g = phase_check(Tmax, Pmin).count('g')
+        if n_g == 0:
+            a = False
+        else:
+            Pmin = Pmin+n
+    return Pmin
+
+P_min_120C = DeterminPmin()
 
 fnr_ls = reacted_filter(fn_ls)
 snr_ls = reacted_filter(sn_ls)

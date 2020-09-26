@@ -18,9 +18,6 @@ def activity(T, P, Q, arr): # takes Fi (mol/s)
     x_ls = [C/sum(arr) for C in arr]
     UNIFAC_DG = fetch_UNIFAC_DG()
     a_ls = [g*x for g, x, in zip(UNIFAC(T, x_ls, UNIFAC_DG), x_ls)]
-    # print(len(a_ls))
-    # print(a_ls)
-    # print(T)
     return a_ls
 
 ########### Adsorption Constants ############

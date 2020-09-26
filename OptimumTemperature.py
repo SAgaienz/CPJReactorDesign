@@ -98,6 +98,7 @@ def plot_3d():
 ##########################
 #%%
 def Equilibrium_Conditions(T, P, Q):
+    print(T)
     def PBR(V, arr):
         T, P, Q = arr[:3]
         Fls = arr[3:]
@@ -128,7 +129,7 @@ def EQ_data_collect(Tspan, P, Q):
     df = DataFrame([Tspan2, *Fe_vals]).T
     df.columns = ['T', *sn_ls]
     df.to_csv('OptimumTempData/Equilibrium_data_vs_T.csv', index = False)
-Tspan2 = np.linspace(30+273.15, 373.15, 15)
+Tspan2 = np.linspace(30+273.15, 373.15, 30)
 # EQ_data_collect(Tspan2, 1600, 15/3600)
 # %%
 df = read_csv('OptimumTempData/Equilibrium_data_vs_T.csv')
