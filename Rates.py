@@ -65,7 +65,7 @@ def rate_ETBE_Thy_conc(T, P, Q, Fls, Beta = 20, F = 85): #returns cat mass-based
     return k*(C_IB - (α*C_ETBE/C_EtOH) + Beta*(C_IB*C_EtOH - α*C_ETBE)/(C_IB + F*C_EtOH**2 + C_ETBE))
 
 # use these to change the ETBE kinetic Model interchangeably
-rate_ETBE_Thy = rate_ETBE_Thy_conc
+# rate_ETBE_Thy = rate_ETBE_Thy_conc
 rate_ETBE_Thy = rate_ETBE_Thy_act 
 
 ############      TBA (M.Honkela)       #################
@@ -143,7 +143,7 @@ def rate_TBA_Umar(T, P, Q, Fls): ## takes F in mol/s, returns mol/s.kg_cat
 # print(k_TBA_ETBE(350), k_TBA(350))
 ############# OVERALL RATE EQ ################
 
-def RATE(T, P, Q, Fls):
+def RATE(T, P, Q, Fls, LD, L):
     " T: K" " P: kPa" " Q: m3/s" " Fls: F (mol/s)"
     "T, P, Q, IB_ane', 'IB', '1B', 'B_diene', 'NB_ane', 'trans_B', 'cis_B', 'water', 'EtOH', 'TBA', 'ETBE', 'di_IB', 'tri_IB"
     "returns mass-based rate (mol/s.kg_cat)"

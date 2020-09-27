@@ -145,12 +145,13 @@ T_opt = interp_Fe_T(max_ETBE)
 
 
 def EQ_plot():
+    EQ_fig, ax = plt.subplots(1,1)
     cols = cm.rainbow(np.linspace(0, 1, len(snr_ls)))
     for n, l, col in zip(snr_ls, fnr_ls, cols):
-        plt.plot(df['T'], df[n], label = l , color = col)
-    plt.plot([T_opt, T_opt], [0, max_ETBE], label = 'Optimum Temp. = ' + str(T_opt) + 'K', color = 'r')
-    plt.plot([min(df['T']), T_opt], [max_ETBE, max_ETBE], label = 'Max. Equil. ETBE = ' + str(max_ETBE) + ' mol/s', color = 'r', ls = '--')
-    plt.legend(loc = 'best')
+        ax.plot(df['T'], df[n], label = l , color = col)
+    ax.plot([T_opt, T_opt], [0, max_ETBE], label = 'Optimum Temp. = ' + str(T_opt) + 'K', color = 'r')
+    ax.plot([min(df['T']), T_opt], [max_ETBE, max_ETBE], label = 'Max. Equil. ETBE = ' + str(max_ETBE) + ' mol/s', color = 'r', ls = '--')
+    ax.legend(loc = 'best')
     plt.show()
-# EQ_plot()
+EQ_plot()
 # %%

@@ -4,7 +4,7 @@ from thermo import Chemical
 from StreamData import sn_ls, fn_ls, P0
 from Rates import EB_rates , rate_ETBE_Thy_act, rate_TBA_Honk, rate_TBA_Umar, rate_diB_Honk, rate_TriB_Honk
 #%%
-def Cpi(T, P, f_ls = fn_ls, s_ls = sn_ls): ## takes T in K, P in kPa, returns J/mol/K
+def Cpi(T, P, f_ls = fn_ls, s_ls = sn_ls): ## takes T in K, P in kPa, returns J/mol.K
     P = P*1000
     Cp_ls = [Chemical(f, T, P).Cpm for f in fn_ls ]
     return Cp_ls
@@ -31,8 +31,8 @@ def dHrx(T, P): ## takes T in K, P in kPa, returns J/mol rx
     Hf_ls = Hf(T, P) # standard heats of formation
     dCprx_ls = dCprx(T, P) # change in Cp of reaction j at temp T (K) and P (kPa)
     ## standard heats of reactions ####
-    dHrx1_0 = -44.3e3 #J/mol
-    dHrx2_0 = Hf_ls[7] + Hf_ls[1] - Hf_ls[9] #J/mol
+    dHrx1_0 = -44.3e3 #J/mol  #ETBE 
+    dHrx2_0 = 26000 #J/mol TBA dehydration
     dHrx3_0 = Hf_ls[11] - 2*Hf_ls[1] #J/mol
     dHrx4_0 = -192.87e3 - Hf_ls[11] - Hf_ls[1] #J/mol
     dHrx5_0 = -316.5e3 + Hf_ls[7] - Hf_ls[9] - Hf_ls[8] #J/mol
@@ -42,9 +42,11 @@ def dHrx(T, P): ## takes T in K, P in kPa, returns J/mol rx
     dHrx3 = dHrx3_0 +  dCprx_ls[2]*(T - Tr)
     dHrx4 = dHrx4_0 +  dCprx_ls[3]*(T - Tr)
     dHrx5 = dHrx5_0 +  dCprx_ls[4]*(T - Tr)
+    # print('Heats of RX')
+    # print([dHrx1, dHrx2, dHrx3, dHrx4, dHrx5])
     return [dHrx1, dHrx2, dHrx3, dHrx4, dHrx5]  
 
-def EB_ada(T, P, Q, arr):
+def EB_ada(T, P, Q, arr, L, LD, U, Tu):
     
     r_ETBE_t = rate_ETBE_Thy_act(T, P, Q, arr)
     r_TBA_1 = rate_TBA_Honk(T, P, Q, arr)
@@ -53,13 +55,22 @@ def EB_ada(T, P, Q, arr):
     r_tri_IB_t = rate_TriB_Honk(T, P, Q, arr)
 
     dHrx_ls = dHrx(T, P)
-    Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 = [r*dH for r, dH in zip([r_ETBE_t, -r_TBA_1, r_di_IB_t/2, r_tri_IB_t,  -r_TBA_2], dHrx_ls)]
+    Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 = [r*dH for r, dH in zip([r_ETBE_t, r_TBA_1, r_di_IB_t, r_tri_IB_t,  -r_TBA_2], dHrx_ls)]
     Cp_ls = Cpi(T, P)
     sum_FiCpi = sum([Fi*Cpi for Fi, Cpi in zip(arr, Cp_ls)])
     # print('-------------')
     # print([Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 ])
     # print(sum_FiCpi)
-    return (0 - Hrx1 - Hrx2 - Hrx3 - Hrx4 - Hrx5)/sum_FiCpi
+    D  = L/LD # m
+    a = 4/D
+    Ac = (np.pi*D**2)/4 # m2
+    rho_b = 610
+    # print([r_ETBE_t, -r_TBA_1, r_di_IB_t/2, r_tri_IB_t,  -r_TBA_2])
+    # print('Heats of RX')
+    # print([Hrx1, Hrx2, Hrx3, Hrx4, Hrx5])
+    # print('Cp tot')
+    # print(sum_FiCpi)
+    return rho_b*Ac*(U*a*(Tu - T) - Hrx1 - Hrx2 - Hrx3 - Hrx4 - Hrx5)/sum_FiCpi
 # %%
 
 # %%

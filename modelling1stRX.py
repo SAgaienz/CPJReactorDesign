@@ -8,23 +8,28 @@ from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0, phase_check
 from PressureDrop import Ergun
 from matplotlib import cm
 from scipy.optimize import fsolve
+
 #%%
-def PBR(V, arr, L, LD):
+def PBR(z, arr, L, LD, U, Tu):
     T, P, Q = arr[:3]
     Fls = arr[3:]
     rhob = 610
     D = L/LD
     Ac = (np.pi*D**2)/4
     r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = rate_ls = [rhob*r*Ac for r in RATE(T, P, Q, Fls, L, D)]
-    dT = EB_ada(T, P, Q, Fls)
+    dT = EB_ada(T, P, Q, Fls, L, LD, U, Tu)
     dQ = 0
     dP = Ergun(T, P, Q, Fls, LD, L) #kPa/m3_rx
+
+    print('z = ' + str(np.round(z, 3)) + '| T = ' + str(np.round(T, 3)) + ' | dT = ' + str(np.round(dT, 3)) +' | P = ' + str(np.round(P, 3)) + 
+    ' | r_ETBE = ' + str(np.round(r_ETBE, 3)))
     if phase_check(T, P).count('g') != 0:
         print('------------ Vapour Phase in Reactor!! --------------')
         print('P = ' + str(np.round(P, 3)) + ' kPa')
         print('T = ' + str(np.round(T, 3)) + ' K')
         print('L/D = ' + str(LD))
-        KeyboardInterrupt
+        print(fn_ls[phase_check(T, P).index('g')] + ' has vapourised.')
+        quit()
     return [dT, dP, dQ, r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
 
 #%%
@@ -41,12 +46,14 @@ print('reactor length = ' + str(np.round(L, 3)) + ' m')
 print('reactor diameter = ' + str(np.round(D, 3)) + ' m')
 print('L/D = ' + str(np.round(LD, 3)))
 
-Lspan = np.linspace(0, L, 100)
-T1 = 363
+Lspan = np.linspace(0, L, 1000)
+T1 = 62+273.15
 Pt0, Qt0 = [v['value'] for v in [P0, Q0]]
 y0 = [T1, 2000, Qt0, *F0]
-ans = solve_ivp(lambda V, arr: PBR(V, arr, L, LD), [0, L], y0, dense_output = True).sol(Lspan)
+U, Tu = 10, 70+273.15
+ans = solve_ivp(lambda V, arr: PBR(V, arr, L, LD, U, Tu), [0, L], y0, dense_output = True).sol(Lspan)
 F_span_out = ans.T[-1]
+
 
 def plot():
     cols = cm.rainbow(np.linspace(0, 1, len(ans[3:])))
@@ -59,3 +66,4 @@ def plot():
     axP.plot(Lspan, ans[1])
     plt.show()
 plot()
+

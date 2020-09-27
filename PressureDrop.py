@@ -4,7 +4,7 @@ from thermo import Chemical, phase_change
 from StreamData import sn_ls, fn_ls, P0, F0, P_min_120C, Q0
 import matplotlib.pyplot as plt
 
-e_cat = 60.2216e-2
+e_b = 0.546237
 rho_b = 0.64026e3
 dp90 = 475e-6
 dp10 = 873.2e-6
@@ -49,7 +49,8 @@ def rho_m(T, P, Q, Fls):
     m_ls = Mass_Flow(Fls)
     mf_ls = [m_i/(sum(m_ls)) for m_i in m_ls]
     a_ls = []
-    for mf_i, rho_i in zip(mf_ls, rho_ls):
+    for i, (mf_i, rho_i) in enumerate(zip(mf_ls, rho_ls)):
+        # print([i, mf_i, rho_i])
         a_ls.append(mf_i/rho_i)
     rho_m = sum(a_ls)**-1
     return rho_m
@@ -65,5 +66,5 @@ def Ergun(T, P, Q, Fls, L, LD): # K, kPa, m3/s, mol/s, [-], m
     D  = L/LD # m
     Ac = (np.pi*D**2)/4 # m2
     G = sum(Mass_Flow(Fls))/Ac # kg/s.m2
-    e = e_cat
+    e = e_b
     return (-G/(rho*dp))*((1-e)/(e**3))*((150*mu*(1-e)/dp) + 1.75*G)/1000 # kPa/m3
