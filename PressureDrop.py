@@ -11,22 +11,25 @@ dp10 = 873.2e-6
 dp = np.mean([dp90, dp10])
 
 
-def mu_i(T, P, f_ls = fn_ls, s_ls = sn_ls): ## takes T in K, P in kPa, returns liquid viscosity (Pa.s)
+def mu_i(T, P, f_ls=fn_ls, s_ls=sn_ls):  ## takes T in K, P in kPa, returns liquid viscosity (Pa.s)
     P = P*1000
-    mu_ls = [Chemical(f, T, P).mu for f in fn_ls ]
+    mu_ls = [Chemical(f, T, P).mu for f in fn_ls]
     return mu_ls
 
-def mu_m_simple(T, P, Q, Fls): # returns approximate liquid viscosity (Pa.s)
+
+def mu_m_simple(T, P, Q, Fls):  # returns approximate liquid viscosity (Pa.s)
     "Assumes no interactions"
     mu_ls = mu_i(T, P)
     xi_ls = [F/sum(Fls) for F in Fls]
     ln_mu_m = sum([xi*np.log(mu_i) for xi, mu_i in zip(xi_ls, mu_ls)])
     return np.exp(ln_mu_m)
 
-def rho_if(T, P, f_ls = fn_ls, s_ls = sn_ls): ## takes T in K, P in kPa, returns kg/m3
+
+def rho_if(T, P, f_ls=fn_ls, s_ls= sn_ls):  ## takes T in K, P in kPa, returns kg/m3
     P = P*1000
     rho_ls = [Chemical(f, T, P).rho for f in fn_ls]
     return rho_ls
+
 
 def MM(f_ls = fn_ls, s_ls = sn_ls, update = False):
     if update:
@@ -35,9 +38,11 @@ def MM(f_ls = fn_ls, s_ls = sn_ls, update = False):
     else:
         return [58.124, 56.10632, 56.10632, 54.09044, 58.124, 56.10632, 56.10632, 18.01528, 46.06844, 74.1216, 102.17476, 112.21264, 168.31896]
 
+
 def Mass_Flow(Fls):
     m_ls = [MM_i*F_i/1000 for MM_i, F_i in zip(MM(), Fls)] ## g/mol * mol/s * 1kg/1000g --> kg/s
     return m_ls
+
 
 def rho_m(T, P, Q, Fls):
     rho_ls = rho_if(T, P)
