@@ -50,7 +50,6 @@ def rho_m(T, P, Q, Fls):
     mf_ls = [m_i/(sum(m_ls)) for m_i in m_ls]
     a_ls = []
     for i, (mf_i, rho_i) in enumerate(zip(mf_ls, rho_ls)):
-        # print([sn_ls[i], rho_i])
         if rho_i == None:
             print([fn_ls[i], phase_check(T, P)[i]])
             quit()
@@ -58,16 +57,14 @@ def rho_m(T, P, Q, Fls):
     rho_m = sum(a_ls)**-1
     return rho_m
 
-def reactor_length_dia(Vtot, LD):
-    D = (Vtot*4/(np.pi*LD))**(1/3)
-    L = LD*D
-    return [L, D]
-
-def Ergun(T, P, Q, Fls, L, LD): # K, kPa, m3/s, mol/s, [-], m
+def Ergun(T, P, Q, Fls, LD, L): # K, kPa, m3/s, mol/s, [-], m
     rho = rho_m(T, P, Q, Fls) # kg/m3
     mu = mu_m_simple(T, P, Q, Fls) # Pa.s
     D  = L/LD # m
     Ac = (np.pi*D**2)/4 # m2
-    G = sum(Mass_Flow(Fls))/Ac # kg/s.m2
+    M_dot = sum(Mass_Flow(Fls))
+    G = M_dot/Ac # kg/s.m2
     e = e_b
-    return (-G/(rho*dp))*((1-e)/(e**3))*((150*mu*(1-e)/dp) + 1.75*G)/1000 # kPa/m3
+    dP = (-G/(rho*dp))*((1-e)/(e**3))*((150*mu*(1-e)/dp) + 1.75*G)/1000 # kPa/m
+    # print([M_dot, rho, mu, G, Ac])
+    return dP

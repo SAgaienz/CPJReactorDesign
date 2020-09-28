@@ -10,17 +10,17 @@ from matplotlib import cm
 from scipy.optimize import fsolve
 
 #%%
-def PBR(z, arr, LD, L, U, Tu, display_output=False):
+def PBR(z, arr, LD, L, U, Tu, debug=False):
     T, P, Q = arr[:3]
     Fls = arr[3:]
     rhob = 610
     D = L/LD
     Ac = (np.pi*D**2)/4
-    r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = rate_ls = [rhob*r*Ac for r in RATE(T, P, Q, Fls, L, D)]
-    dT, Duty, RX_Heats = EB(T, P, Q, Fls, L, LD, U, Tu)
+    r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = rate_ls = [rhob*r*Ac for r in RATE(T, P, Q, Fls, L, D)] # mol/s.m = mol/s.kg * kg/m3 * m2
+    dT, Duty, RX_Heats = EB(T, P, Q, Fls, L, LD, U, Tu) # K/m, W/
     dQ = 0
-    dP = Ergun(T, P, Q, Fls, LD, L) #kPa/m3_rx
-    if display_output:
+    dP = Ergun(T, P, Q, Fls, LD, L) #kPa/m_rx
+    if debug:
         debug_output(z, T, dT, P, dP, r_ETBE, Duty, RX_Heats)
     
     if phase_check(T, P).count('g') != 0:
@@ -64,7 +64,7 @@ D = 75e-3
 T1 = 70+273.15
 Pt0, Qt0 = [v['value'] for v in [P0, Q0]]
 y0 = per_tube_cond(T1, 2000, Qt0, F0, Nt)
-U, Tu = 100, 85+273.15
+U, Tu = 70, 85+273.15
 [Wtot, Vtot, Ltot, D, LDtot], [Wp, Vp, Lp, D, LDp] = reactor_params(Nt, D)
 
 def Reactor_conditions_output():
@@ -82,10 +82,11 @@ def Reactor_conditions_output():
 Reactor_conditions_output()
 
 Lspan = np.linspace(0, Lp, 1000)
-ans = solve_ivp(lambda V, arr: PBR(V, arr, LDp, Lp, U, Tu, True), [0, Lp], y0, dense_output = True).sol(Lspan)
+debug=True
+ans = solve_ivp(lambda V, arr: PBR(V, arr, LDp, Lp, U, Tu, debug), [0, Lp], y0, dense_output = True).sol(Lspan)
 F_span_out = ans.T[-1]
 Tspan = [T - 273.15 for T in ans[0]]
-Pspan = [P/100 for P in ans[1]]
+Pspan = [P for P in ans[1]] 
 F_span = [F*3600 for F in  ans[3:]]
 #%%
 def plot():
@@ -101,7 +102,7 @@ def plot():
     axP.plot(Lspan, Pspan, color = Pcol)
     axP.set_xlabel('Reactor Length (m)')
     axP.tick_params(axis = 'y', labelcolor = Pcol)
-    axP.set_ylabel('Pressure (bar)', color = Pcol)
+    axP.set_ylabel('Pressure (kPa)', color = Pcol)
 
     axT = axP.twinx()
     axT.plot(Lspan, Tspan, color = Tcol)

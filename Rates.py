@@ -140,8 +140,86 @@ def rate_TBA_Umar(T, P, Q, Fls): ## takes F in mol/s, returns mol/s.kg_cat
     k, Keq = k_TBA_ETBE(T), Ka_TBA_ETBE(T)
     return -k*(a_TBA*a_EtOH - (a_ETBE*a_water/Keq))
 
-# print(k_TBA_ETBE(350), k_TBA(350))
+
+############### if adsorption denominator to account for all adsorption ###########
+
+def rate_ETBE_Thy_act_ads(T, P, Q, Fls, Beta = 20, F = 85): #returns cat mass-based rate (mol/s.g) (mol/s.kg_cat)
+    _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, Fls)
+    k, Keq = k_ETBE(T), Ka_ETBE(T)
+    k2, Keq2 = 20*k, 20*Keq
+    α = 1/Keq
+
+    B = K_ETBE_K_EtOH = 50
+    F = K_EtOH_K_IB = 7
+    D = K_ETBE_K_IB = 8
+    K_IB_K_EtOH = 1/K_EtOH_K_IB
+    K_w_K_TBA = 1.5
+    K_TBA_K_IB = 7
+    K_w_K_IB = K_TBA_K_IB*K_w_K_TBA
+    K_TBA_K_EtOH = K_TBA_K_IB*K_IB_K_EtOH
+    K_w_K_EtOH = K_w_K_IB*K_IB_K_EtOH
+
+    high_EtOH = ((k*a_IB*a_EtOH - (k/Keq)*K_ETBE_K_EtOH*a_ETBE)/(a_EtOH + K_ETBE_K_EtOH*a_ETBE + K_TBA_K_EtOH*a_TBA + a_water*K_w_K_EtOH))
+    low_EtOH  = ((k2*a_IB*a_EtOH - (k2/Keq2)*K_ETBE_K_IB*a_ETBE)/(a_IB + K_EtOH_K_IB*a_EtOH**2 + K_ETBE_K_IB*a_ETBE + K_TBA_K_IB*a_TBA + a_water*K_w_K_IB)) 
+    return  high_EtOH + low_EtOH
+
+def rate_TBA_Honk_ads(T, P, Q, Fls):
+    _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, Fls)
+    k, Ka = k_TBA(T), Ka_TBA(T)
+    B = K_ETBE_K_EtOH = 50
+    F = K_EtOH_K_IB = 7
+    D = K_ETBE_K_IB = 8
+    K_IB_K_EtOH = 1/K_EtOH_K_IB
+    K_w_K_TBA = 1.5
+    K_TBA_K_IB = 7
+    K_w_K_IB = K_TBA_K_IB*K_w_K_TBA
+    K_TBA_K_EtOH = K_TBA_K_IB*K_IB_K_EtOH
+    K_w_K_EtOH = K_w_K_IB*K_IB_K_EtOH
+
+    return k*(a_water*a_IB - Ka*a_TBA)/(a_IB + a_TBA*K_TBA_K_IB + a_water*K_w_K_IB + K_EtOH_K_IB*a_EtOH + K_ETBE_K_IB*a_ETBE)
+
+def rate_diB_Honk_ads(T, P, Q, Fls):
+    _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, Fls)
+    k = k_diB(T)
+    B = K_ETBE_K_EtOH = 50
+    F = K_EtOH_K_IB = 7
+    D = K_ETBE_K_IB = 8
+    K_IB_K_EtOH = 1/K_EtOH_K_IB
+    K_w_K_TBA = 1.5
+    K_TBA_K_IB = 7
+    K_w_K_IB = K_TBA_K_IB*K_w_K_TBA
+    K_TBA_K_EtOH = K_TBA_K_IB*K_IB_K_EtOH
+    K_w_K_EtOH = K_w_K_IB*K_IB_K_EtOH
+
+    return (k*a_IB**2)/(a_IB + a_TBA*K_TBA_K_IB + a_water*K_w_K_IB + K_EtOH_K_IB*a_EtOH + K_ETBE_K_IB*a_ETBE)**2
+
+def rate_TriB_Honk_ads(T, P, Q, Fls): # takes F in mol/s, returns mol/s.kg_cat
+    # Fls = check_zero(Fls)
+    _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, Fls)
+    k = k_TriiB(T) # mol/s.kg_cat
+    B = K_ETBE_K_EtOH = 50
+    F = K_EtOH_K_IB = 7
+    D = K_ETBE_K_IB = 8
+    K_IB_K_EtOH = 1/K_EtOH_K_IB
+    K_w_K_TBA = 1.5
+    K_TBA_K_IB = 7
+    K_w_K_IB = K_TBA_K_IB*K_w_K_TBA
+    K_TBA_K_EtOH = K_TBA_K_IB*K_IB_K_EtOH
+    K_w_K_EtOH = K_w_K_IB*K_IB_K_EtOH
+
+    return k*a_IB*a_di_IB/((a_IB + a_TBA*K_TBA_K_IB + a_water*K_w_K_IB + K_EtOH_K_IB*a_EtOH + K_ETBE_K_IB*a_ETBE)**3)
+
+
 ############# OVERALL RATE EQ ################
+# --- change these to account for adsorption effects ---- 
+rate_ETBE_Thy = rate_ETBE_Thy_act
+# rate_ETBE_Thy = rate_ETBE_Thy_conc
+
+# rate_ETBE_Thy = rate_ETBE_Thy_act_ads
+# rate_TBA_Honk = rate_TBA_Honk_ads
+# rate_diB_Honk = rate_diB_Honk_ads
+# rate_TriB_Honk = rate_TriB_Honk_ads
+# --------------------------------------------------------
 
 def RATE(T, P, Q, Fls, LD, L):
     " T: K" " P: kPa" " Q: m3/s" " Fls: F (mol/s)"
@@ -179,3 +257,6 @@ def EB_rates(T, P, Q, Fls):
     r_di_IB_t = rate_diB_Honk(T, P, Q, Fls)
     r_tri_IB_t = rate_TriB_Honk(T, P, Q, Fls)
     return [r_ETBE_t, r_TBA_1, r_di_IB_t, r_tri_IB_t,  r_TBA_2]
+
+
+
