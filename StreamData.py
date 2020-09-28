@@ -69,3 +69,5 @@ P_min_120C = DeterminPmin()
 
 fnr_ls = reacted_filter(fn_ls)
 snr_ls = reacted_filter(sn_ls)
+
+# print(phase_check(200, 1000))

@@ -46,7 +46,7 @@ def dHrx(T, P): ## takes T in K, P in kPa, returns J/mol rx
     # print([dHrx1, dHrx2, dHrx3, dHrx4, dHrx5])
     return [dHrx1, dHrx2, dHrx3, dHrx4, dHrx5]  
 
-def EB_ada(T, P, Q, arr, L, LD, U, Tu):
+def EB(T, P, Q, arr, L, LD, U, Tu):
     
     r_ETBE_t = rate_ETBE_Thy_act(T, P, Q, arr)
     r_TBA_1 = rate_TBA_Honk(T, P, Q, arr)
@@ -62,7 +62,7 @@ def EB_ada(T, P, Q, arr, L, LD, U, Tu):
     # print([Hrx1, Hrx2, Hrx3, Hrx4, Hrx5 ])
     # print(sum_FiCpi)
     D  = L/LD # m
-    a = 4/D
+    a = np.pi*D
     Ac = (np.pi*D**2)/4 # m2
     rho_b = 610
     # print([r_ETBE_t, -r_TBA_1, r_di_IB_t/2, r_tri_IB_t,  -r_TBA_2])
@@ -70,7 +70,9 @@ def EB_ada(T, P, Q, arr, L, LD, U, Tu):
     # print([Hrx1, Hrx2, Hrx3, Hrx4, Hrx5])
     # print('Cp tot')
     # print(sum_FiCpi)
-    return rho_b*Ac*(U*a*(Tu - T) - Hrx1 - Hrx2 - Hrx3 - Hrx4 - Hrx5)/sum_FiCpi
+    Duty = U*a*(Tu - T)
+    RX_Heats = sum([Hrx1 , Hrx2 , Hrx3 , Hrx4 , Hrx5])
+    return [(Duty-rho_b*Ac*RX_Heats)/sum_FiCpi, Duty, -RX_Heats*rho_b*Ac]
 # %%
 
 # %%

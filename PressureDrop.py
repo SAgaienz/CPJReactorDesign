@@ -1,7 +1,7 @@
 #%%
 import numpy as np 
 from thermo import Chemical, phase_change
-from StreamData import sn_ls, fn_ls, P0, F0, P_min_120C, Q0
+from StreamData import sn_ls, fn_ls, P0, F0, P_min_120C, Q0, phase_check
 import matplotlib.pyplot as plt
 
 e_b = 0.546237
@@ -50,7 +50,10 @@ def rho_m(T, P, Q, Fls):
     mf_ls = [m_i/(sum(m_ls)) for m_i in m_ls]
     a_ls = []
     for i, (mf_i, rho_i) in enumerate(zip(mf_ls, rho_ls)):
-        # print([i, mf_i, rho_i])
+        # print([sn_ls[i], rho_i])
+        if rho_i == None:
+            print([fn_ls[i], phase_check(T, P)[i]])
+            quit()
         a_ls.append(mf_i/rho_i)
     rho_m = sum(a_ls)**-1
     return rho_m

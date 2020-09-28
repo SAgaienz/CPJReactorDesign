@@ -3,26 +3,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp, odeint
 from Rates import RATE, EB_rates
-from EnergyBalance import EB_ada
+from EnergyBalance import EB
 from StreamData import mt0, Ft0, Q0, P0, sn_ls, fn_ls, F0, phase_check
 from PressureDrop import Ergun
 from matplotlib import cm
 from scipy.optimize import fsolve
 
 #%%
-def PBR(z, arr, L, LD, U, Tu):
+def PBR(z, arr, LD, L, U, Tu, display_output=False):
     T, P, Q = arr[:3]
     Fls = arr[3:]
     rhob = 610
     D = L/LD
     Ac = (np.pi*D**2)/4
     r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = rate_ls = [rhob*r*Ac for r in RATE(T, P, Q, Fls, L, D)]
-    dT = EB_ada(T, P, Q, Fls, L, LD, U, Tu)
+    dT, Duty, RX_Heats = EB(T, P, Q, Fls, L, LD, U, Tu)
     dQ = 0
     dP = Ergun(T, P, Q, Fls, LD, L) #kPa/m3_rx
-
-    print('z = ' + str(np.round(z, 3)) + '| T = ' + str(np.round(T, 3)) + ' | dT = ' + str(np.round(dT, 3)) +' | P = ' + str(np.round(P, 3)) + 
-    ' | r_ETBE = ' + str(np.round(r_ETBE, 3)))
+    if display_output:
+        debug_output(z, T, dT, P, dP, r_ETBE, Duty, RX_Heats)
+    
     if phase_check(T, P).count('g') != 0:
         print('------------ Vapour Phase in Reactor!! --------------')
         print('P = ' + str(np.round(P, 3)) + ' kPa')
@@ -32,38 +32,79 @@ def PBR(z, arr, L, LD, U, Tu):
         quit()
     return [dT, dP, dQ, r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
 
-#%%
+def debug_output(z, T, dT, P, dP, r_ETBE, Duty, RX_Heats):
+    print('z = ' + str(np.round(z, 3)) + ' | T = ' + str(np.round(T, 3)) + ' | dT = ' + str(np.round(dT, 3)) +' | P = ' + str(np.round(P, 3)) + ' | dP = ' + str(np.round(dP, 3)) +
+    ' | r_ETBE = ' + str(np.round(r_ETBE, 3)) + ' | Duty = ' + str(np.round(Duty, 3)) + 
+    ' | Hrx = ' + str(np.round(RX_Heats, 3)))
+
+def per_tube_cond(T, P, Q, Fls, Nt):
+    Q0 = Q/Nt
+    Fls_0 = [F/Nt for F in Fls]
+    return [T, P, Q0, *Fls_0]
+
 rhob = 610
 Wtot = 16000 #kg
-W1 = 7423 #kg
-Vtot = W1/rhob
-LD = 500
-D = (4*Vtot/(LD*np.pi))**(1/3)
-L = LD*D
-print('Catalyst mass = ' + str(np.round(Wtot, 3)) + ' kg')
-print('reactor volume = ' + str(np.round(Vtot, 3)) + ' m3')
-print('reactor length = ' + str(np.round(L, 3)) + ' m')
-print('reactor diameter = ' + str(np.round(D, 3)) + ' m')
-print('L/D = ' + str(np.round(LD, 3)))
-
-Lspan = np.linspace(0, L, 1000)
-T1 = 62+273.15
+def reactor_params(Nt, D, Wtot=Wtot, rhob=rhob):
+    # total reactor values
+    Vtot = Wtot/rhob
+    Ac = (np.pi*D**2)/4
+    Ltot = Vtot/Ac
+    LD_tot = Ltot/D
+    Tot_vals = [Wtot, Vtot, Ltot, D, LD_tot]
+    # per tube values
+    Lp = Ltot/Nt
+    Vp = Lp*((np.pi*D**2)/4)
+    Wp = Vp*rhob
+    LDp = Lp/D
+    per_tube_vals = [Wp, Vp, Lp, D, LDp]
+    return [Tot_vals, per_tube_vals]
+#%%
+Nt = 500
+D = 75e-3
+T1 = 70+273.15
 Pt0, Qt0 = [v['value'] for v in [P0, Q0]]
-y0 = [T1, 2000, Qt0, *F0]
-U, Tu = 10, 70+273.15
-ans = solve_ivp(lambda V, arr: PBR(V, arr, L, LD, U, Tu), [0, L], y0, dense_output = True).sol(Lspan)
+y0 = per_tube_cond(T1, 2000, Qt0, F0, Nt)
+U, Tu = 100, 85+273.15
+[Wtot, Vtot, Ltot, D, LDtot], [Wp, Vp, Lp, D, LDp] = reactor_params(Nt, D)
+
+def Reactor_conditions_output():
+    print('-------------------- Total Reactor Parameters --------------------')
+    print('Total Catalyst mass = ' + str(np.round(Wtot, 3)) + ' kg')
+    print('Total reactor volume = ' + str(np.round(Vtot, 3)) + ' m3')
+    print('Total reactor length = ' + str(np.round(Ltot, 3)) + ' m')
+    print('reactor diameter = ' + str(np.round(D, 3)) + ' m')
+    print('L/D tot = ' + str(np.round(LDtot, 3)))
+    print('--------------- Individual Tube-Reactor Parameters ---------------')
+    print('Tube Catalyst mass = ' + str(np.round(Wp, 3)) + ' kg')
+    print('Tube reactor volume = ' + str(np.round(Vp, 3)) + ' m3')
+    print('Tube reactor length = ' + str(np.round(Lp, 3)) + ' m')
+    print('Tube L/D = ' + str(np.round(LDp, 3)))
+Reactor_conditions_output()
+
+Lspan = np.linspace(0, Lp, 1000)
+ans = solve_ivp(lambda V, arr: PBR(V, arr, LDp, Lp, U, Tu, False), [0, Lp], y0, dense_output = True).sol(Lspan)
 F_span_out = ans.T[-1]
-
-
+F_span = [F*3600 for F in  ans[3:]]
+#%%
 def plot():
-    cols = cm.rainbow(np.linspace(0, 1, len(ans[3:])))
-    fig, (ax1, ax2) = plt.subplots(2,1, sharex = True)
-    for n, Fls, col in zip(fn_ls, ans[3:], cols):
+    Pcol = 'k'
+    Tcol = 'r'
+    cols = cm.rainbow(np.linspace(0, 1, len(F_span)))
+    fig, (ax1, axT) = plt.subplots(2,1, sharex = True)
+    for n, Fls, col in zip(fn_ls, F_span, cols):
         ax1.plot(Lspan, Fls, label = n, color = col)
     ax1.legend(loc = 'best')
-    ax2.plot(Lspan, ans[0])
-    axP = ax2.twinx()
-    axP.plot(Lspan, ans[1])
+    ax1.set_ylabel('Molar flow (mol/h)')
+    axT.plot(Lspan, ans[0], color = Tcol)
+    axT.tick_params(axis='y', labelcolor = Tcol)
+    axT.set_ylabel('Temperature (K)', color = Tcol)
+    axP = axT.twinx()
+    axP.plot(Lspan, ans[1], color = Pcol)
+    axT.set_xlabel('Reactor Length (m)')
+    axP.tick_params(axis = 'y', labelcolor = Pcol)
+    axP.set_ylabel('Pressure (kPa)', color = Pcol)
     plt.show()
 plot()
 
+
+# %%
