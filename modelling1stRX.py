@@ -82,27 +82,31 @@ def Reactor_conditions_output():
 Reactor_conditions_output()
 
 Lspan = np.linspace(0, Lp, 1000)
-ans = solve_ivp(lambda V, arr: PBR(V, arr, LDp, Lp, U, Tu, False), [0, Lp], y0, dense_output = True).sol(Lspan)
+ans = solve_ivp(lambda V, arr: PBR(V, arr, LDp, Lp, U, Tu, True), [0, Lp], y0, dense_output = True).sol(Lspan)
 F_span_out = ans.T[-1]
+Tspan = [T - 273.15 for T in ans[0]]
+Pspan = [P/100 for P in ans[1]]
 F_span = [F*3600 for F in  ans[3:]]
 #%%
 def plot():
     Pcol = 'k'
     Tcol = 'r'
     cols = cm.rainbow(np.linspace(0, 1, len(F_span)))
-    fig, (ax1, axT) = plt.subplots(2,1, sharex = True)
+    fig, (ax1, axP) = plt.subplots(2,1, sharex = True)
     for n, Fls, col in zip(fn_ls, F_span, cols):
         ax1.plot(Lspan, Fls, label = n, color = col)
     ax1.legend(loc = 'best')
     ax1.set_ylabel('Molar flow (mol/h)')
-    axT.plot(Lspan, ans[0], color = Tcol)
-    axT.tick_params(axis='y', labelcolor = Tcol)
-    axT.set_ylabel('Temperature (K)', color = Tcol)
-    axP = axT.twinx()
-    axP.plot(Lspan, ans[1], color = Pcol)
-    axT.set_xlabel('Reactor Length (m)')
+    
+    axP.plot(Lspan, Pspan, color = Pcol)
+    axP.set_xlabel('Reactor Length (m)')
     axP.tick_params(axis = 'y', labelcolor = Pcol)
-    axP.set_ylabel('Pressure (kPa)', color = Pcol)
+    axP.set_ylabel('Pressure (bar)', color = Pcol)
+
+    axT = axP.twinx()
+    axT.plot(Lspan, Tspan, color = Tcol)
+    axT.tick_params(axis='y', labelcolor = Tcol)
+    axT.set_ylabel(r'Temperature ($^\circ C$)', color = Tcol)
     plt.show()
 plot()
 
