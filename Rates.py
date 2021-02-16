@@ -47,7 +47,7 @@ def k_ETBE(T, k3_r = 4.7e-4, Tr = 343, Ea = 81.2e3): #k3_r: dm3/g.s, Ea: kJ/kmol
     R = 8.314
     k0 = k3_r/np.exp(-Ea/(R*Tr))
     return k0*np.exp(-Ea/(R*T))
-
+print(np.format_float_scientific(4.7e-4/np.exp(-81.2e3/(343*8.314))))
 def rate_ETBE_Thy_act(T, P, Q, Fls, Beta = 20, F = 85): #returns cat mass-based rate (mol/s.g) (mol/s.kg_cat)
     _ , a_IB , _ , _, _, _, _ , a_water , a_EtOH , a_TBA , a_ETBE , a_di_IB , _ = activity(T, P, Q, Fls)
     B = 50
@@ -64,9 +64,7 @@ def rate_ETBE_Thy_conc(T, P, Q, Fls, Beta = 20, F = 85): #returns cat mass-based
     α = 1/Keq
     return k*(C_IB - (α*C_ETBE/C_EtOH) + Beta*(C_IB*C_EtOH - α*C_ETBE)/(C_IB + F*C_EtOH**2 + C_ETBE))
 
-# use these to change the ETBE kinetic Model interchangeably
-# rate_ETBE_Thy = rate_ETBE_Thy_conc
-rate_ETBE_Thy = rate_ETBE_Thy_act 
+
 
 ############      TBA (M.Honkela)       #################
 def Ka_TBA(T): # T in K, returns dimensionless
@@ -75,7 +73,7 @@ def Ka_TBA(T): # T in K, returns dimensionless
 def k_TBA(T): #T in K , returns mol/s.kg_cat
     E = 18e3
     R = 8.314
-    Fref = 0.2  * (1000/3600) # mol/h.g_cat --> mol/s.kg_cat
+    Fref = 0.7  * (1000/3600) # mol/h.g_cat --> mol/s.kg_cat
     Tref = 343
     return Fref*np.exp(-(E/R)*((T**-1) - (Tref**-1)))
 
@@ -84,6 +82,7 @@ def rate_TBA_Honk(T, P, Q, Fls):
     k, Ka = k_TBA(T), Ka_TBA(T)
     KwKTBA = 1.5
     K_TBA_K_IB = 7
+    reverse = k*a_water*a_IB/(a_IB + K_TBA_K_IB*a_TBA + a_water*(K_TBA_K_IB*KwKTBA))
     return k*(a_water*a_IB - Ka*a_TBA)/(a_IB + K_TBA_K_IB*a_TBA + a_water*(K_TBA_K_IB*KwKTBA))
 
 ############      Di-IB  (M.Honkela)       #################
@@ -212,8 +211,8 @@ def rate_TriB_Honk_ads(T, P, Q, Fls): # takes F in mol/s, returns mol/s.kg_cat
 
 ############# OVERALL RATE EQ ################
 # --- change these to account for adsorption effects ---- 
-rate_ETBE_Thy = rate_ETBE_Thy_act
-# rate_ETBE_Thy = rate_ETBE_Thy_conc
+# rate_ETBE_Thy = rate_ETBE_Thy_act
+rate_ETBE_Thy = rate_ETBE_Thy_conc
 
 # rate_ETBE_Thy = rate_ETBE_Thy_act_ads
 # rate_TBA_Honk = rate_TBA_Honk_ads
@@ -246,7 +245,6 @@ def RATE(T, P, Q, Fls, LD, L):
     r_ETBE = r_ETBE_t - r_TBA_2
     r_di_IB = r_di_IB_t
     r_tri_IB = r_tri_IB_t
-    # print(r_TBA_1, r_TBA_2)
 
     return [r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
 

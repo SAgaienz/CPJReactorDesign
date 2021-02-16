@@ -71,3 +71,9 @@ fnr_ls = reacted_filter(fn_ls)
 snr_ls = reacted_filter(sn_ls)
 
 # print(phase_check(200, 1000))
+# for n, x in zip(fn_ls, [F/sum(Ft0) for F in Ft0]):
+#     print(n, x)
+  
+# %%
+comp
+# %%

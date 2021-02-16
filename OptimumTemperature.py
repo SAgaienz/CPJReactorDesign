@@ -102,14 +102,13 @@ def Equilibrium_Conditions(T, P, Q):
     def PBR(V, arr):
         T, P, Q = arr[:3]
         Fls = arr[3:]
-        r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = [rhob*r for r in RATE(T, P, Q, Fls)]
+        r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB = [rhob*r for r in RATE(T, P, Q, Fls, 500, 5)]
         # dT = EB_ada(T, P, Q, Fls)
         dT = 0
         dP, dQ = 0,0
 
         return [dT, dP, dQ, r_IB_ane, r_IB, r_1B, r_B_diene, r_NB_ane, r_trans_B, r_cis_B, r_water, r_EtOH, r_TBA, r_ETBE, r_di_IB, r_tri_IB]
 
-    #%%
     rhob = 610
     Wtot = 1600000 #kg0
     # T0 = 80+273.15
@@ -144,7 +143,7 @@ max_ETBE = max(df['ETBE'])
 T_opt = interp_Fe_T(max_ETBE)
 
 
-def EQ_plot():
+def EQ_plot(show = True):
     EQ_fig, ax = plt.subplots(1,1)
     cols = cm.rainbow(np.linspace(0, 1, len(snr_ls)))
     for n, l, col in zip(snr_ls, fnr_ls, cols):
@@ -152,6 +151,7 @@ def EQ_plot():
     ax.plot([T_opt, T_opt], [0, max_ETBE], label = 'Optimum Temp. = ' + str(T_opt) + 'K', color = 'r')
     ax.plot([min(df['T']), T_opt], [max_ETBE, max_ETBE], label = 'Max. Equil. ETBE = ' + str(max_ETBE) + ' mol/s', color = 'r', ls = '--')
     ax.legend(loc = 'best')
-    plt.show()
-EQ_plot()
+    if show:
+        plt.show()
+# EQ_plot()
 # %%
