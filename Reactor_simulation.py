@@ -90,7 +90,7 @@ def Reactor_conditions_output():
     print('utube = ' + str(y0[2]/Ac))
 Reactor_conditions_output()
 
-Lspan = np.linspace(0, Lp, 1000)
+Lspan = np.linspace(0, Lp, 10000)
 debug=True
 ans = solve_ivp(lambda V, arr: PBR(V, arr, LDp, Lp, U, Tu, debug), [0, Lp], y0, dense_output = True).sol(Lspan)
 print('Done R1!')
