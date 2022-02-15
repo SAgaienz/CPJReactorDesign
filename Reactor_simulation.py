@@ -133,7 +133,7 @@ Tspan_plot = [T - 273.15 for T in Tspan]
 Pspan_plot = [P for P in Pspan] 
 Fspan_plot = [F*3600 for F in  Fspan]
 
-def plot(Wf = 10, save = True):
+def plot(Wf = 10, save = False):
     W =4*2.54
     H = 1.5*W
     Pcol = 'k'
@@ -160,7 +160,7 @@ def plot(Wf = 10, save = True):
     if save:
         plt.savefig('Plots/Main.pdf', dpi = 500)
     plt.show()
-plot(True)
+plot(False)
 
 #%%
 def TPlot():
@@ -180,7 +180,9 @@ for rls, n in zip(Rspan, nls):
 plt.xlabel('Length along single reactor tube, m')
 plt.ylabel('Catalyst mass-based rate, mol/kg.s')
 plt.legend(loc = 'best')
-plt.savefig('Plots/AllLines.pdf', dpi = 500)
+save = False
+if save:
+    plt.savefig('Plots/AllLines.pdf', dpi = 500)
 plt.show()
 # %%
 def Conversion(Fls):
