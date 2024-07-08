@@ -1,5 +1,5 @@
 import numpy as np 
-from thermo import Chemical, UNIFAC
+from thermo.unifac import UFIP, UFSG, UNIFAC
 from StreamData import CF_dict, fn_ls, sn_ls
 
 def fetch_UNIFAC_DG(full_name_list = fn_ls, update =False):
@@ -17,7 +17,7 @@ def fetch_UNIFAC_DG(full_name_list = fn_ls, update =False):
 def activity(T, P, Q, Fls): # takes Fi (mol/s)
     x_ls = [F/sum(Fls) for F in Fls]
     UNIFAC_DG = fetch_UNIFAC_DG()
-    a_ls = [g*x for g, x, in zip(UNIFAC(T, x_ls, UNIFAC_DG), x_ls)]
+    a_ls = [g*x for g, x, in zip(UNIFAC.from_subgroups(T, x_ls, UNIFAC_DG).gammas(), x_ls)]
     return a_ls
 
 ########### Adsorption Constants ############

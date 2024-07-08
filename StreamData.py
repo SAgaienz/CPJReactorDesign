@@ -19,8 +19,8 @@ comp['shortname'] = names = ['IB_ane', 'IB', '1B', 'B_diene', 'NB_ane', 'trans_B
 
 # %%
 C_F = comp[['Compound', 'shortname' ,'F']]
-C_F = C_F.append({'Compound': "2,4,4-trimethyl-2-pentene", 'shortname': 'di_IB', 'F':0}, ignore_index = True)
-C_F = C_F.append({'Compound': "4,4-dimethyl-2-neopentyl-1-pentene", 'shortname': 'tri_IB', 'F':0}, ignore_index = True)
+C_F = C_F._append({'Compound': "2,4,4-trimethyl-2-pentene", 'shortname': 'di_IB', 'F':0}, ignore_index = True)
+C_F = C_F._append({'Compound': "4,4-dimethyl-2-neopentyl-1-pentene", 'shortname': 'tri_IB', 'F':0}, ignore_index = True)
 
 # %%
 def packer(df):
